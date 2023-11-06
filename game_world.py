@@ -1,7 +1,7 @@
-objects = [[] for _ in range(4)]
+objects = [[] for _ in range(4)] # 보이는 세계
 
 # fill here
-collision_pairs = {}
+collision_pairs = {} # 충돌의 세계
 
 def add_collision_pair(group, a = None , b = None): # a, b 사이에 충돌 검사 필요 등록
     if group not in collision_pairs:
@@ -67,3 +67,11 @@ def collide(a, b):
 
     return True
 
+
+def handle_collisions():
+    for group, pairs in collision_pairs.items():
+        for a in pairs[0]:
+            for b in pairs[1]:
+                if collide(a, b) :
+                    a.handle_collision(group, b)
+                    b. handle_collision(group, a)

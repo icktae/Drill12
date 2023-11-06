@@ -1,6 +1,8 @@
 from pico2d import *
 import game_world
 import game_framework
+from zombie import Zombie
+
 
 class Ball:
     image = None
@@ -23,3 +25,10 @@ class Ball:
     # fill here
     def get_bb(self):
         return self.x - 10, self.y - 10, self.x + 10, self.y + 10
+
+    def handle_collision(self, group, other):
+        if group == 'boy:ball':
+            game_world.remove_object(self)
+
+        if group == 'zombie:ball':
+            game_world.remove_object(self)
