@@ -40,6 +40,10 @@ def init():
 
 
 
+    game_world.collision_pairs('boy:ball', boy, None)
+    for ball in balls:
+        game_world.collision_pairs('boy:ball', None, ball)
+
 def finish():
     game_world.clear()
     pass
