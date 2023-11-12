@@ -30,6 +30,7 @@ def render():
         for o in layer:
             o.draw()
 
+
 # fill here
 def remove_collision_object(o):
     for pairs in collision_pairs.values():
