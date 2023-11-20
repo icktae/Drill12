@@ -1,10 +1,10 @@
-from pico2d import *
-from sdl2 import SDLK_UP, SDLK_DOWN, SDLK_q, SDLK_w
+# 이것은 각 상태들을 객체로 구현한 것임.
 
+from pico2d import get_time, load_image, load_font, clamp, SDL_KEYDOWN, SDL_KEYUP, SDLK_SPACE, SDLK_LEFT, SDLK_RIGHT, \
+    draw_rectangle
 from ball import Ball
 import game_world
 import game_framework
-
 
 # state event check
 # ( state event type, event value )
@@ -24,36 +24,6 @@ def left_down(e):
 def left_up(e):
     return e[0] == 'INPUT' and e[1].type == SDL_KEYUP and e[1].key == SDLK_LEFT
 
-def up_down(e):
-    return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_UP
-
-def up_up(e):
-    return e[0] == 'INPUT' and e[1].type == SDL_KEYUP and e[1].key == SDLK_UP
-
-def down_down(e):
-    return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_DOWN
-
-def down_up(e):
-    return e[0] == 'INPUT' and e[1].type == SDL_KEYUP and e[1].key == SDLK_DOWN
-
-
-def q_down(e):
-    return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_q
-
-
-def q_up(e):
-    return e[0] == 'INPUT' and e[1].type == SDL_KEYUP and e[1].key == SDLK_q
-
-
-def w_down(e):
-    return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_w
-
-
-def w_up(e):
-    return e[0] == 'INPUT' and e[1].type == SDL_KEYUP and e[1].key == SDLK_w
-
-
-
 def space_down(e):
     return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_SPACE
 
@@ -61,6 +31,9 @@ def time_out(e):
     return e[0] == 'TIME_OUT'
 
 # time_out = lambda e : e[0] == 'TIME_OUT'
+
+
+
 
 # Boy Run Speed
 PIXEL_PER_METER = (10.0 / 0.3)  # 10 pixel 30 cm
@@ -74,23 +47,33 @@ TIME_PER_ACTION = 0.5
 ACTION_PER_TIME = 1.0 / TIME_PER_ACTION
 FRAMES_PER_ACTION = 8
 
+
+
+
+
+
+
+
+
+
+
 class Idle:
 
     @staticmethod
     def enter(boy, e):
-        print("stay")
         if boy.face_dir == -1:
             boy.action = 2
         elif boy.face_dir == 1:
             boy.action = 3
         boy.dir = 0
-        boy.dir_y = 0
         boy.frame = 0
-        boy.wait_time = get_time()
+        boy.wait_time = get_time() # pico2d import 필요
         pass
 
     @staticmethod
     def exit(boy, e):
+        if space_down(e):
+            boy.fire_ball()
         pass
 
     @staticmethod
@@ -104,58 +87,29 @@ class Idle:
         boy.image.clip_draw(int(boy.frame) * 100, boy.action * 100, 100, 100, boy.x, boy.y)
 
 
-def draw_touch_down_text():
-    pass
-
 
 class Run:
 
-    def __init__(self):
-        self.font = load_font('ENCR10B.TTF', 128)
-
     @staticmethod
     def enter(boy, e):
-        print("run")
-        boy.dir_y = 0
-        if right_down(e) or right_up(e):  # 오른쪽으로 RUN
+        if right_down(e) or left_up(e): # 오른쪽으로 RUN
             boy.dir, boy.action, boy.face_dir = 1, 1, 1
-        elif left_down(e) or left_up(e):  # 왼쪽으로 RUN
+        elif left_down(e) or right_up(e): # 왼쪽으로 RUN
             boy.dir, boy.action, boy.face_dir = -1, 0, -1
-        elif up_down(e):  # 위쪽으로 RUN
-            boy.dir_y, boy.action, boy.face_dir = 1, 1, boy.face_dir
-        elif down_down(e):  # 아래쪽으로 RUN
-            boy.dir_y, boy.action, boy.face_dir = -1, 1, boy.face_dir
 
     @staticmethod
     def exit(boy, e):
+        if space_down(e):
+            boy.fire_ball()
+
         pass
 
     @staticmethod
     def do(boy):
+        # boy.frame = (boy.frame + 1) % 8
         boy.x += boy.dir * RUN_SPEED_PPS * game_framework.frame_time
-        boy.y += boy.dir_y * RUN_SPEED_PPS * game_framework.frame_time
-        boy.x = clamp(25, boy.x, 1700)
-        boy.y = clamp(125, boy.y, 625)
+        boy.x = clamp(25, boy.x, 1600-25)
         boy.frame = (boy.frame + FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time) % 8
-
-        if boy.dir == 1:
-            boy.action = 1
-        elif boy.dir == -1:
-            boy.action = 0
-        elif boy.dir_y == 1:
-            boy.action = 1
-        elif boy.dir_y == -1:
-            boy.action = 1
-
-        # boy.x -> over  game clear
-        if boy.x >= 1600 :
-            print("Touch Down")
-
-
-        # boy.y -> under 25, over 625 game over
-        if boy.y <= 125 or boy.y >= 625:
-            print('Game Over')
-
 
 
     @staticmethod
@@ -163,11 +117,13 @@ class Run:
         boy.image.clip_draw(int(boy.frame) * 100, boy.action * 100, 100, 100, boy.x, boy.y)
 
 
-class Speedup:
+
+class Sleep:
+
     @staticmethod
     def enter(boy, e):
-        print("speed up")
-        boy.speedup_time = get_time() + 0.4
+        boy.frame = 0
+        pass
 
     @staticmethod
     def exit(boy, e):
@@ -175,69 +131,17 @@ class Speedup:
 
     @staticmethod
     def do(boy):
-        speed_multiplier = 2
-
-        boy.x += boy.dir * RUN_SPEED_PPS * speed_multiplier * game_framework.frame_time
-        boy.y += boy.dir_y * RUN_SPEED_PPS * speed_multiplier * game_framework.frame_time
-        boy.x = clamp(25, boy.x, 1700)
-        boy.y = clamp(125, boy.y, 625)
-        boy.frame = (boy.frame + FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time) % 8
-
-        if boy.dir == -1:
-            boy.action = 0
-
-        # boy.x -> over  game clear
-        if boy.x >= 1600 :
-            print("Touch Down")
-
-
-        # boy.y -> under 25, over 625 game over
-        if boy.y <= 125 or boy.y >= 625:
-            print('Game Over')
-
-        if get_time() >= boy.speedup_time :
-            boy.state_machine.handle_event(('TIME_OUT', 0))
-
-    @staticmethod
-    def draw(boy):
-        boy.image.clip_draw(int(boy.frame) * 100, boy.action * 100, 100, 100, boy.x, boy.y)
-
-
-
-class Backstep:
-    @staticmethod
-    def enter(boy, e):
-        print("backstep")
-        boy.speedup_time = get_time() + 0.04
-
-
-    @staticmethod
-    def exit(boy, e):
-        pass
-
-    @staticmethod
-    def do(boy):
-        speed_multiplier = 10
-
-        boy.x -= boy.dir * RUN_SPEED_PPS * speed_multiplier * game_framework.frame_time
-
         boy.frame = (boy.frame + FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time) % 8
 
 
-        if get_time() >= boy.speedup_time:
-            boy.state_machine.handle_event(('TIME_OUT', 0))
-
     @staticmethod
     def draw(boy):
-        boy.image.clip_draw(int(boy.frame) * 100, boy.action * 100, 100, 100, boy.x, boy.y)
-
-
-
-
-
-
-class Dash :
-    pass
+        if boy.face_dir == -1:
+            boy.image.clip_composite_draw(int(boy.frame) * 100, 200, 100, 100,
+                                          -3.141592 / 2, '', boy.x + 25, boy.y - 25, 100, 100)
+        else:
+            boy.image.clip_composite_draw(int(boy.frame) * 100, 300, 100, 100,
+                                          3.141592 / 2, '', boy.x - 25, boy.y - 25, 100, 100)
 
 
 class StateMachine:
@@ -245,14 +149,9 @@ class StateMachine:
         self.boy = boy
         self.cur_state = Idle
         self.transitions = {
-            Idle: {right_down: Run, left_down: Run, up_down: Run, down_down: Run, q_down: Speedup, w_down: Backstep,
-                   left_up: Idle, right_up: Idle, up_up: Idle, down_up: Idle, space_down: Idle, q_up : Speedup, time_out : Run},
-            Run: {right_down: Run, left_down: Run, up_down: Run, down_down: Run, q_down: Speedup, w_down: Backstep,
-                  right_up: Idle, left_up: Idle, up_up: Idle, down_up: Idle, space_down: Run, q_up: Speedup, time_out : Run},
-            Speedup: {right_down: Run, left_down: Run, up_down: Run, down_down: Run, w_down: Backstep,
-                   right_up: Idle, left_up: Idle, up_up: Idle, down_up: Idle, space_down: Idle, time_out : Run},
-            Backstep: {right_down: Run, left_down: Run, up_down: Run, down_down: Run,
-                   right_up: Idle, left_up: Idle, up_up: Idle, down_up: Idle, space_down: Idle, time_out : Run}
+            Idle: {right_down: Run, left_down: Run, left_up: Run, right_up: Run, time_out: Sleep, space_down: Idle},
+            Run: {right_down: Idle, left_down: Idle, right_up: Idle, left_up: Idle, space_down: Run},
+            Sleep: {right_down: Run, left_down: Run, right_up: Run, left_up: Run}
         }
 
     def start(self):
@@ -260,7 +159,6 @@ class StateMachine:
 
     def update(self):
         self.cur_state.do(self.boy)
-
 
     def handle_event(self, e):
         for check_event, next_state in self.transitions[self.cur_state].items():
@@ -275,20 +173,30 @@ class StateMachine:
     def draw(self):
         self.cur_state.draw(self.boy)
 
+
+
+
+
 class Boy:
     def __init__(self):
-        self.x, self.y = 600, 350
+        self.x, self.y = 50, 90
         self.frame = 0
         self.action = 3
         self.face_dir = 1
         self.dir = 0
-        self.size = 75
-        self.dir_y = 0
-        self.image = load_image('sonic_animation.png')
-        self.font = load_font('ENCR10B.TTF', 128)
+        self.image = load_image('animation_sheet.png')
+        self.font = load_font('ENCR10B.TTF', 16)
         self.state_machine = StateMachine(self)
         self.state_machine.start()
         self.ball_count = 10
+
+
+    def fire_ball(self):
+        if self.ball_count > 0:
+            self.ball_count -= 1
+            ball = Ball(self.x, self.y, self.face_dir*10)
+            game_world.add_object(ball)
+            game_world.add_collision_pair('zombie:ball', None, ball)
 
     def update(self):
         self.state_machine.update()
@@ -298,26 +206,18 @@ class Boy:
 
     def draw(self):
         self.state_machine.draw()
+        self.font.draw(self.x-10, self.y + 50, f'{self.ball_count:02d}', (255, 255, 0))
         draw_rectangle(*self.get_bb())
-
-    def clear_draw(self):
-        if self.x >= 1600:
-            self.font.draw(500, 350, 'TouchDown!', (255, 255, 255))
-            draw_rectangle(*self.get_bb())
-
-    def over_draw(self):
-        if self.y <= 125 or self.y >= 625:
-            self.font.draw(500, 350, 'GameOver', (255, 255, 255))
-            draw_rectangle(*self.get_bb())
-
 
     # fill here
     def get_bb(self):
-        return self.x - 20, self.y - 40, self.x + 20, self.y + 30
+        return self.x - 20, self.y - 50, self.x + 20, self.y + 50
+
 
     def handle_collision(self, group, other):
         if group == 'boy:ball':
             self.ball_count += 1
 
-        if group == 'boy:enemy':
+        if group == 'boy:zombie' :
             game_framework.quit()
+
